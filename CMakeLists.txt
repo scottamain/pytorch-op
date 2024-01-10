@@ -3,6 +3,8 @@ project(cumsum)
 
 find_package(Torch REQUIRED)
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
+option(USE_CUDA "Use CUDA" OFF)
+option(CMAKE_CUDA_ARCHITECTURES "CUDA arch" 75)
 
 add_library(cumsum SHARED "cumsum.cpp")
 target_compile_features(cumsum PRIVATE cxx_std_17)
