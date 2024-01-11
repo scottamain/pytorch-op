@@ -1,12 +1,31 @@
 import torch
+import torch.nn as nn
+import torch.jit
 
-torch.ops.load_library("build/libaddtensors.so")
-print(torch.ops.my_ops.add_tensors(torch.ones((1, 10)), torch.ones((1, 10))))
+torch.ops.load_library("build/libadd.dylib")
+print(torch.ops.my_ops.add(torch.ones((1, 10))))
 
-# model = torch.nn.Sequential(
-#   torch.nn.Linear(10, 10),
-#   torch.ops.my_ops.add_tensors(),
-#   torch.nn.Linear(10, 10)
-# )
+def add(input: torch.Tensor) -> torch.Tensor:
+    """ This is needed for the onnx register_custom_op_symbolic call. """
+    torch.ops.my_ops.add(input)
 
-# model(torch.randn(10, 10))
+class AddModule(nn.Module):
+    def forward(self, input):
+        return add(input)
+
+model = torch.nn.Sequential(
+  torch.nn.Linear(10, 10),
+  AddModule(),  # WORKS FINE IF THIS LINE IS DELETED
+  torch.nn.Linear(10, 10)
+)
+
+print(model)
+
+input = torch.ones((1, 10))
+print(type(input))
+
+torch.onnx.register_custom_op_symbolic("my_ops::add", add, 1)
+torch.onnx.export(model, input, 'build/model.onnx', input_names=["input"], output_names=["output"])
+
+scripted_model = torch.jit.script(model)
+scripted_model.save('build/model.torchscript')

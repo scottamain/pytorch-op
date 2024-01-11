@@ -3,15 +3,13 @@
 Basic example of how to build a custom op for a PyTorch model
 
 ```
-python3 -m pip install torch numpy
+python3 -m pip install torch numpy onnx
 
 mkdir build; cd build
 
-cmake -DCMAKE_PREFIX_PATH="$(python3 -c 'import torch.utils; print(torch.utils.cmake_prefix_path)')" ..
+cmake -DCMAKE_PREFIX_PATH="$(python3 -c 'import torch.utils; print(torch.utils.cmake_prefix_path)')" -S . -B build
 
-make -j8
+make -C build
 
-cd ..
-
-python3 test.py
+python3 test_add.py
 ```

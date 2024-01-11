@@ -6,10 +6,6 @@ set(CMAKE_CXX_FLAGS "-O3 -Wall -Wextra")
 option(USE_CUDA "Use CUDA" OFF)
 option(CMAKE_CUDA_ARCHITECTURES "CUDA arch" 75)
 
-add_library(cumsum SHARED "cumsum.cpp")
-target_compile_features(cumsum PRIVATE cxx_std_17)
-target_link_libraries(cumsum "${TORCH_LIBRARIES}")
-
-add_library(addtensors SHARED "add_tensors.cpp")
-target_compile_features(addtensors PRIVATE cxx_std_17)
-target_link_libraries(addtensors "${TORCH_LIBRARIES}")
+add_library(add SHARED "add.cpp")
+target_compile_features(add PRIVATE cxx_std_17)
+target_link_libraries(add "${TORCH_LIBRARIES}")
