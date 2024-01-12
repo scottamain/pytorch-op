@@ -4,38 +4,32 @@ import torch.jit
 
 torch.ops.load_library("build/libadd.dylib")
 
-def add(input: torch.Tensor) -> torch.Tensor:
-    """ This is needed for the onnx register_custom_op_symbolic call. """
-    return torch.ops.my_ops.add(input)
-
 class AddModule(nn.Module):
     def forward(self, input):
-        return add(input)
+        return torch.ops.my_ops.add(input)
 
-
+# Test the op in different use cases
 input = torch.ones(1, 10)
+print("op:", torch.ops.my_ops.add(input))
 
-# Works:
-results = torch.ops.my_ops.add(input)
-print("op:", results)
-
-# Works:
 model = AddModule()
-results = model(input)
-print("model:", results)
+print("model:", model(input))
 
-# Does NOT work:
 model = torch.nn.Sequential(
   torch.nn.Linear(10, 10),
-  AddModule(),  # WORKS FINE IF THIS LINE IS DELETED
+  AddModule(),
   torch.nn.Linear(10, 10)
 )
-print(model)
-results = model(input)
-print("sequential:", results)
+print("sequential:", model(input))
 
-torch.onnx.register_custom_op_symbolic("my_ops::add", add, 16)
-torch.onnx.export(model, input, 'build/model.onnx', input_names=["input"], output_names=["output"])
+# Now convert to ONNX
+def sym_add(g, input):
+    return g.op("my_ops::add", input).setType(input.type())
 
-# scripted_model = torch.jit.script(model)
-# scripted_model.save('build/model.torchscript')
+torch.onnx.register_custom_op_symbolic("my_ops::add", sym_add, 1)
+torch.onnx.export(model, input, 'build/model.onnx',
+                  input_names=["input"], output_names=["output"])
+
+# And TorchScript
+scripted_model = torch.jit.script(model)
+scripted_model.save('build/model.torchscript')
